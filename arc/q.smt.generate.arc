@@ -68,7 +68,7 @@
   .select one condition_te_val related by act_if->V_VAL[R625]->TE_VAL[R2040]
   .select one te_blk related by te_smt->TE_BLK[R2078]
   .assign ws = te_blk.indentation
-  .assign te_smt.buffer2 = ws + "}"
+  .assign te_smt.buffer2 = ws + "end if"
   .include "${te_file.arc_path}/t.smt.if.c"
   .assign te_smt.OAL = "IF ( ${condition_te_val.OAL} )"
 .end function
