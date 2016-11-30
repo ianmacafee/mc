@@ -62,9 +62,17 @@ ${ws}for ${te_for.loop_variable} in ${te_for.set_variable}'elements loop
   .param inst_ref act_if
   .// .select any te_file from instances of TE_FILE
   .select one condition_te_val related by act_if->V_VAL[R625]->TE_VAL[R2040]
+  .select one else_smt related by act_if->ACT_E[R683]
+  .select one elif_smt related by act_if->ACT_EL[R682]
   .select one te_blk related by te_smt->TE_BLK[R2078]
   .assign ws = te_blk.indentation
   .assign te_smt.buffer2 = ws + "end if;"
+  .if ( not_empty else_smt )
+    .assign te_smt.buffer2 = ""
+  .end if;
+  .if ( not_empty elif_smt )
+    .assign te_smt.buffer2 = ""
+  .end if;
 ${ws}if ${condition_te_val.OAL} then
   .assign te_smt.OAL = "IF ( ${condition_te_val.OAL} )"
 .end function
@@ -109,12 +117,8 @@ ${ws}while ${condition_te_val.OAL} loop
 .function smt_else
   .param inst_ref te_smt
   .param inst_ref act_e
-  .select one te_prev related by te_smt->TE_SMT[R2012.'succeeds']
   .select one te_blk related by te_smt->TE_BLK[R2078]
   .assign ws = te_blk.indentation
-  .if ( not_empty te_prev )
-    .assign te_prev.buffer2 = ""
-  .end if
   .assign te_smt.buffer2 = ws + "end if;"
 ${ws}else
   .assign te_smt.OAL = ""
@@ -137,14 +141,14 @@ ${ws}else
 .function smt_elif
   .param inst_ref te_smt
   .param inst_ref act_el
-  .select one te_prev related by te_smt->TE_SMT[R2012.'succeeds']
+  .select one else_smt related by act_el->ACT_IF[R682]->ACT_E[R683]
   .select one condition_te_val related by act_el->V_VAL[R659]->TE_VAL[R2040]
   .select one te_blk related by te_smt->TE_BLK[R2078]
   .assign ws = te_blk.indentation
-  .if ( not_empty te_prev )
-    .assign te_prev.buffer2 = ""
-  .end if
   .assign te_smt.buffer2 = ws + "end if;"
+  .if ( not_empty else_smt )
+    .assign te_smt.buffer2 = ""
+  .end if
 ${ws}elsif ${condition_te_val.OAL} then
   .assign te_smt.OAL = ""
 .end function
