@@ -60,7 +60,6 @@ ${ws}for ${te_for.loop_variable} in ${te_for.set_variable}'elements loop
 .function smt_if
   .param inst_ref te_smt
   .param inst_ref act_if
-  .// .select any te_file from instances of TE_FILE
   .select one condition_te_val related by act_if->V_VAL[R625]->TE_VAL[R2040]
   .select one else_smt related by act_if->ACT_E[R683]
   .select one elif_smt related by act_if->ACT_EL[R682]
@@ -97,7 +96,7 @@ ${ws}if ${condition_te_val.OAL} then
   .select one te_blk related by te_smt->TE_BLK[R2078]
   .assign ws = te_blk.indentation
   .assign te_smt.buffer2 = ws + "end loop;"
-${ws}while ${condition_te_val.OAL} loop
+${ws}while ${condition_te_val.buffer} loop
   .assign te_smt.OAL = "WHILE ( ${condition_te_val.OAL} )"
 .end function
 .// ----------------------------------------------------------
@@ -253,7 +252,12 @@ ${ws}elsif ${condition_te_val.OAL} then
   .if ( not_empty v_pvl )
     .assign is_parameter = true
   .end if
+  .// Set to lower case is boolean
+  .if ( 1 == r_te_dt.Core_Typ )
+${ws}${l_te_val.OAL} := $l{r_te_val.OAL};
+  .else
 ${ws}${l_te_val.OAL} := ${r_te_val.OAL};
+  .end if
   .assign te_smt.OAL = "ASSIGN ${l_te_val.OAL} = ${r_te_val.OAL}"
 .end function
 .//
@@ -771,9 +775,9 @@ ${ws}unlink ${one_te_var.OAL} R$t{r_rel.Numb}.$_{act_uru.relationship_phrase} ${
       .exit 101
     .end if
     .if ( "any" == te_select.multiplicity )
-${ws}${v_var.Name} := find_one ${te_select.target_class_name};
+${ws}${v_var.Name} := find_one ${te_select.target_class_name}();
     .elif ( "many" == te_select.multiplicity )
-${ws}${v_var.Name} := find ${te_select.target_class_name};
+${ws}${v_var.Name} := find ${te_select.target_class_name}();
     .end if
     .assign te_smt.OAL = "SELECT ${act_fio.cardinality} ${v_var.Name} FROM INSTANCES OF ${te_class.Key_Lett}"
   .end if
@@ -1016,8 +1020,8 @@ ${ws}generate ${te_val.OAL};
       .for each v_par in v_pars
         .select one par_te_dt related by v_par->V_VAL[R800]->S_DT[R820]->TE_DT[R2021]
         .select one par_te_val related by v_par->V_VAL[R800]->TE_VAL[R2040]
-        .invoke r = t_oal_smt_event_parameters( "", v_par.Name, par_te_val.buffer, par_te_dt.Core_Typ, te_blk.indentation )
-        .assign parameters = parameters + r.result
+        .//.invoke r = t_oal_smt_event_parameters( "", v_par.Name, par_te_val.buffer, par_te_dt.Core_Typ, te_blk.indentation )
+        .assign parameters = ( parameters + delimeter ) + par_te_val.buffer
         .assign parameter_OAL = ( parameter_OAL + delimeter ) + par_te_val.OAL
         .assign delimeter = ", "
       .end for
@@ -1030,7 +1034,7 @@ ${ws}generate ${te_val.OAL};
     .assign var_name = te_var.buffer
     .//.include "${te_file.arc_path}/t.smt.generate.c"
     .// oal2masl:  Use MASL instead of OAL.
-${ws}generate ${sm_evt.Drv_Lbl}:${sm_evt.Mning}(${parameter_OAL}) to ${v_var.Name};
+${ws}generate ${te_class.Name}:${sm_evt.Mning}(${parameters}) to ${v_var.Name};
     .assign te_smt.OAL = "GENERATE ${sm_evt.Drv_Lbl}:${sm_evt.Mning}(${parameter_OAL}) TO ${v_var.Name}"
   .end if
 .end function
@@ -1396,7 +1400,7 @@ ${ws}${te_brg.EEkeyletters}::${te_brg.Name}( ${parameter_OAL} );
     .end if
     .//.include "${te_file.arc_path}/t.smt.function.c"
      .// oal2masl:  Use MASL instead of OAL.
-${ws}::${te_sync.Name}( ${parameter_OAL} );
+${ws}${te_sync.GeneratedName}( ${parameter_OAL} );
     .assign te_smt.OAL = "::${te_sync.Name}( ${parameter_OAL} )"
   .end if
 .end function
@@ -1469,7 +1473,7 @@ ${ws}::${te_sync.Name}( ${parameter_OAL} );
     .//
     .//.include "${te_file.arc_path}/t.smt.return.c"
      .// oal2masl:  Use MASL instead of OAL.
-${ws}return ${value_OAL};
+${ws}return ${value};
     .assign te_smt.OAL = "RETURN " + value_OAL
   .end if
 .end function
